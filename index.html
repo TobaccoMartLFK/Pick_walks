@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pick Walk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1B1F23;
+    --ink-soft: #4B5259;
+    --paper: #F3EEE3;
+    --paper-raised: #EAE3D3;
+    --line: #D9D0BC;
+    --amber: #C98A2C;
+    --amber-ink: #7A5419;
+    --green: #4A7C59;
+    --green-bg: #E4EEE6;
+    --red: #B5484D;
+    --red-bg: #F6E4E4;
+    --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --ink: #EDE8DC;
+      --ink-soft: #ABA391;
+      --paper: #1B1F23;
+      --paper-raised: #262B30;
+      --line: #3A4046;
+      --amber: #E3A94B;
+      --amber-ink: #F0C176;
+      --green: #7FBF92;
+      --green-bg: #223129;
+      --red: #E08A8E;
+      --red-bg: #372323;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #EDE8DC;
+    --ink-soft: #ABA391;
+    --paper: #1B1F23;
+    --paper-raised: #262B30;
+    --line: #3A4046;
+    --amber: #E3A94B;
+    --amber-ink: #F0C176;
+    --green: #7FBF92;
+    --green-bg: #223129;
+    --red: #E08A8E;
+    --red-bg: #372323;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 20px 16px 60px; }
+  header.top { padding: 4px 0 18px; border-bottom: 2px solid var(--ink); margin-bottom: 18px; }
+  header.top h1 {
+    font-size: 22px; font-weight: 700; margin: 0 0 2px;
+    letter-spacing: -0.01em;
+  }
+  header.top .sub { color: var(--ink-soft); font-size: 13px; }
+  nav.tabs {
+    display: flex; gap: 2px; margin-bottom: 22px;
+    border-bottom: 1px solid var(--line);
+  }
+  nav.tabs button {
+    font-family: var(--font-ui); font-size: 14px; font-weight: 600;
+    background: none; border: none; color: var(--ink-soft);
+    padding: 10px 14px 12px; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  nav.tabs button.active { color: var(--ink); border-bottom-color: var(--amber); }
+  section.view { display: none; }
+  section.view.active { display: block; }
+
+  .block { border: 1px solid var(--line); background: var(--paper-raised); padding: 16px; margin-bottom: 14px; }
+  .block h2 { font-size: 14px; font-weight: 700; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
+  .block p.hint { font-size: 13px; color: var(--ink-soft); margin: 4px 0 12px; line-height: 1.5; }
+
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-soft); margin-bottom: 4px; }
+  input[type=text], input[type=number], input[type=date], select {
+    width: 100%; font-family: var(--font-ui); font-size: 15px;
+    padding: 9px 10px; border: 1px solid var(--line); background: var(--paper);
+    color: var(--ink); margin-bottom: 12px;
+  }
+  input[type=number] { font-family: var(--font-mono); }
+  input:focus, select:focus, button:focus-visible {
+    outline: 2px solid var(--amber); outline-offset: 1px;
+  }
+  .row2 { display: flex; gap: 10px; }
+  .row2 > div { flex: 1; }
+
+  button.btn {
+    font-family: var(--font-ui); font-size: 14px; font-weight: 600;
+    padding: 10px 16px; border: 1px solid var(--ink); background: var(--ink);
+    color: var(--paper); cursor: pointer;
+  }
+  button.btn.secondary { background: var(--paper); color: var(--ink); }
+  button.btn.amber { background: var(--amber); border-color: var(--amber); color: #1B1F23; }
+  button.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.btn-sm {
+    font-family: var(--font-ui); font-size: 12px; font-weight: 600;
+    padding: 5px 9px; border: 1px solid var(--line); background: none; color: var(--ink-soft);
+    cursor: pointer;
+  }
+
+  .store-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .store-row:last-child { border-bottom: none; }
+  .store-row .name { font-weight: 600; }
+  .store-row .count { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); }
+  .file-label {
+    display: inline-block; font-size: 12px; font-weight: 600; padding: 6px 10px;
+    border: 1px solid var(--line); cursor: pointer; color: var(--ink-soft);
+  }
+  .file-label:hover { border-color: var(--ink-soft); }
+
+  table.items { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  table.items th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;
+    color: var(--ink-soft); border-bottom: 1px solid var(--line); padding: 6px 6px;
+  }
+  table.items td { padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  table.items td.itemname { font-size: 14px; }
+  table.items td.itemsku { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); }
+  table.items input[type=number] { margin-bottom: 0; width: 72px; padding: 6px 8px; }
+  table.items td.var-cell { font-family: var(--font-mono); font-weight: 600; text-align: right; }
+
+  .status-pill {
+    display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 9px;
+    text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .status-pill.pass { background: var(--green-bg); color: var(--green); }
+  .status-pill.variance { background: var(--red-bg); color: var(--red); }
+
+  .summary-row { display: flex; justify-content: space-between; align-items: baseline; margin: 14px 0 6px; }
+  .summary-row .n { font-family: var(--font-mono); font-size: 28px; font-weight: 600; }
+
+  .log-entry { border-bottom: 1px solid var(--line); padding: 12px 0; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-head { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+  .log-head .meta { font-size: 13px; }
+  .log-head .meta .date { font-family: var(--font-mono); font-weight: 600; }
+  .log-head .meta .store { color: var(--ink-soft); }
+  .log-detail { display: none; margin-top: 10px; padding-left: 2px; }
+  .log-detail.open { display: block; }
+  .var-item { font-family: var(--font-mono); font-size: 12.5px; display: flex; gap: 10px; padding: 3px 0; color: var(--ink-soft); }
+  .var-item .nm { font-family: var(--font-ui); color: var(--ink); flex: 1; }
+
+  .empty { color: var(--ink-soft); font-size: 13px; padding: 20px 0; text-align: center; }
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--paper); padding: 10px 18px; font-size: 13px;
+    font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Pick Walk</h1>
+    <div class="sub">Random inventory audits, verified against POS counts</div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="stores" class="active">Stores</button>
+    <button data-tab="walk">New Walk</button>
+    <button data-tab="log">Log</button>
+  </nav>
+
+  <section class="view active" id="view-stores">
+    <div class="block">
+      <h2>Item lists</h2>
+      <p class="hint">Load the ASCII inventory export (ItemNum, ItemName, Dept_ID, Cost, Category_ID, Category_Name, AltSku) for each store. Re-upload any time to refresh.</p>
+      <div id="storeList"></div>
+    </div>
+    <div class="block">
+      <h2>Add a store</h2>
+      <div class="row2">
+        <div>
+          <label for="newStoreName">Store name</label>
+          <input type="text" id="newStoreName" placeholder="e.g. Main St">
+        </div>
+      </div>
+      <label class="file-label" for="newStoreFile">Choose CSV file&hellip;</label>
+      <input type="file" id="newStoreFile" accept=".csv,text/csv" style="display:none">
+      <div id="newStoreFileName" style="font-size:12px;color:var(--ink-soft);margin-top:6px;"></div>
+    </div>
+  </section>
+
+  <section class="view" id="view-walk">
+    <div class="block" id="setupBlock">
+      <h2>Set up walk</h2>
+      <div class="row2">
+        <div>
+          <label for="walkStore">Store</label>
+          <select id="walkStore"></select>
+        </div>
+        <div>
+          <label for="walkN">Number of items</label>
+          <input type="number" id="walkN" min="1" value="10">
+        </div>
+      </div>
+      <div class="row2">
+        <div>
+          <label for="walkEmployee">Employee initials</label>
+          <input type="text" id="walkEmployee" maxlength="6" placeholder="e.g. JD">
+        </div>
+        <div>
+          <label for="walkDate">Date</label>
+          <input type="date" id="walkDate">
+        </div>
+      </div>
+      <button class="btn amber" id="generateBtn">Generate pick walk</button>
+    </div>
+
+    <div class="block" id="countBlock" style="display:none;">
+      <h2>Count items</h2>
+      <p class="hint">Enter what CRE shows as the system count, then the physical count from the shelf.</p>
+      <table class="items">
+        <thead><tr><th>Item</th><th>System</th><th>Physical</th></tr></thead>
+        <tbody id="itemsBody"></tbody>
+      </table>
+      <div style="margin-top:14px; display:flex; gap:10px;">
+        <button class="btn" id="completeBtn">Confirm count complete</button>
+        <button class="btn secondary" id="cancelWalkBtn">Cancel walk</button>
+      </div>
+    </div>
+
+    <div class="block" id="resultBlock" style="display:none;">
+      <h2>Result</h2>
+      <div class="summary-row">
+        <span class="status-pill" id="resultPill"></span>
+        <span class="n" id="resultCount"></span>
+      </div>
+      <div id="varianceList"></div>
+      <div style="margin-top:14px; display:flex; gap:10px;">
+        <button class="btn amber" id="saveWalkBtn">Save to log</button>
+        <button class="btn secondary" id="discardWalkBtn">Discard</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-log">
+    <div class="block">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0;">Master log</h2>
+        <button class="btn-sm" id="downloadBtn">Download CSV</button>
+      </div>
+      <p class="hint">One entry per walk. Tap an entry to see variance detail.</p>
+      <div id="logList"></div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  const LS_STORES = 'pickwalk_stores_v1';
+  const LS_LOG = 'pickwalk_log_v1';
+
+  function safeGet(key, fallback) {
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : fallback;
+    } catch (e) { return fallback; }
+  }
+  function safeSet(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+  }
+
+  let stores = safeGet(LS_STORES, {});   // { name: [{itemNum, itemName, dept, sku}] }
+  let log = safeGet(LS_LOG, []);         // [{date, store, employee, status, items:[{name, itemNum, supposed, actual, variance}]}]
+  let currentWalk = null;
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  // ---------- CSV parsing ----------
+  function parseCSVLine(line) {
+    const out = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (inQ) {
+        if (c === '"') {
+          if (line[i+1] === '"') { cur += '"'; i++; } else { inQ = false; }
+        } else cur += c;
+      } else {
+        if (c === '"') inQ = true;
+        else if (c === ',') { out.push(cur); cur = ''; }
+        else cur += c;
+      }
+    }
+    out.push(cur);
+    return out;
+  }
+
+  function parseInventoryCSV(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (lines.length < 2) return [];
+    const header = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
+    const idxNum = header.indexOf('itemnum');
+    const idxName = header.indexOf('itemname');
+    const items = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCSVLine(lines[i]);
+      if (cols.length < 2) continue;
+      const itemNum = idxNum >= 0 ? cols[idxNum] : cols[0];
+      const itemName = idxName >= 0 ? cols[idxName] : cols[1];
+      if (!itemName) continue;
+      items.push({ itemNum: (itemNum || '').trim(), itemName: itemName.trim() });
+    }
+    return items;
+  }
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('nav.tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('section.view').forEach(v => v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('view-' + btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'walk') refreshStoreSelect();
+      if (btn.dataset.tab === 'log') renderLog();
+    });
+  });
+
+  // ---------- Stores view ----------
+  function renderStores() {
+    const el = document.getElementById('storeList');
+    const names = Object.keys(stores);
+    if (names.length === 0) {
+      el.innerHTML = '<div class="empty">No stores yet. Add one below.</div>';
+      return;
+    }
+    el.innerHTML = '';
+    names.forEach(name => {
+      const row = document.createElement('div');
+      row.className = 'store-row';
+      row.innerHTML = `
+        <div>
+          <div class="name">${escapeHtml(name)}</div>
+          <div class="count">${stores[name].length} items loaded</div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <label class="file-label">Replace<input type="file" accept=".csv,text/csv" style="display:none" data-replace="${escapeHtml(name)}"></label>
+          <button class="btn-sm" data-remove="${escapeHtml(name)}">Remove</button>
+        </div>`;
+      el.appendChild(row);
+    });
+    el.querySelectorAll('input[data-replace]').forEach(inp => {
+      inp.addEventListener('change', e => handleFile(e.target.files[0], inp.dataset.replace));
+    });
+    el.querySelectorAll('button[data-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        delete stores[btn.dataset.remove];
+        safeSet(LS_STORES, stores);
+        renderStores();
+      });
+    });
+  }
+
+  function handleFile(file, storeName) {
+    if (!file || !storeName) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const items = parseInventoryCSV(e.target.result);
+      stores[storeName] = items;
+      safeSet(LS_STORES, stores);
+      renderStores();
+      toast(`${storeName}: ${items.length} items loaded`);
+    };
+    reader.onerror = () => toast('Could not read that file');
+    reader.readAsText(file);
+  }
+
+  document.getElementById('newStoreFile').addEventListener('change', e => {
+    const f = e.target.files[0];
+    document.getElementById('newStoreFileName').textContent = f ? f.name : '';
+  });
+
+  document.getElementById('newStoreFile').addEventListener('change', () => {
+    const nameInput = document.getElementById('newStoreName');
+    const fileInput = document.getElementById('newStoreFile');
+    const f = fileInput.files[0];
+    const name = nameInput.value.trim();
+    if (!f) return;
+    if (!name) { toast('Name the store first'); fileInput.value = ''; return; }
+    handleFile(f, name);
+    nameInput.value = '';
+    fileInput.value = '';
+    document.getElementById('newStoreFileName').textContent = '';
+  });
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- New walk view ----------
+  function refreshStoreSelect() {
+    const sel = document.getElementById('walkStore');
+    const names = Object.keys(stores);
+    sel.innerHTML = names.length
+      ? names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)} (${stores[n].length})</option>`).join('')
+      : '<option value="">No stores loaded</option>';
+  }
+
+  document.getElementById('walkDate').valueAsDate = new Date();
+
+  document.getElementById('generateBtn').addEventListener('click', () => {
+    const storeName = document.getElementById('walkStore').value;
+    const n = parseInt(document.getElementById('walkN').value, 10);
+    const employee = document.getElementById('walkEmployee').value.trim();
+    const date = document.getElementById('walkDate').value;
+    if (!storeName) { toast('Load a store item list first'); return; }
+    if (!employee) { toast('Enter employee initials'); return; }
+    if (!n || n < 1) { toast('Enter a valid number of items'); return; }
+    const pool = stores[storeName].slice();
+    if (pool.length === 0) { toast('That store has no items'); return; }
+    const count = Math.min(n, pool.length);
+    // Fisher-Yates partial shuffle
+    for (let i = pool.length - 1; i > pool.length - 1 - count; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const picked = pool.slice(pool.length - count).map(it => ({
+      itemNum: it.itemNum, itemName: it.itemName, supposed: '', actual: ''
+    }));
+    currentWalk = { store: storeName, employee, date, items: picked };
+    renderCountForm();
+    document.getElementById('setupBlock').style.display = 'none';
+    document.getElementById('countBlock').style.display = 'block';
+    document.getElementById('resultBlock').style.display = 'none';
+  });
+
+  function renderCountForm() {
+    const body = document.getElementById('itemsBody');
+    body.innerHTML = '';
+    currentWalk.items.forEach((item, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div class="itemname">${escapeHtml(item.itemName)}</div>
+          <div class="itemsku">${escapeHtml(item.itemNum)}</div>
+        </td>
+        <td><input type="number" min="0" data-idx="${idx}" data-field="supposed"></td>
+        <td><input type="number" min="0" data-idx="${idx}" data-field="actual"></td>`;
+      body.appendChild(tr);
+    });
+    body.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        currentWalk.items[inp.dataset.idx][inp.dataset.field] = inp.value;
+      });
+    });
+  }
+
+  document.getElementById('cancelWalkBtn').addEventListener('click', () => {
+    currentWalk = null;
+    document.getElementById('setupBlock').style.display = 'block';
+    document.getElementById('countBlock').style.display = 'none';
+  });
+
+  document.getElementById('completeBtn').addEventListener('click', () => {
+    const unfilled = currentWalk.items.some(it => it.supposed === '' || it.actual === '');
+    if (unfilled) { toast('Fill in every item before confirming'); return; }
+    currentWalk.items.forEach(it => {
+      it.supposed = Number(it.supposed);
+      it.actual = Number(it.actual);
+      it.variance = it.actual - it.supposed;
+    });
+    const varianceItems = currentWalk.items.filter(it => it.variance !== 0);
+    currentWalk.status = varianceItems.length === 0 ? 'pass' : 'variance';
+
+    const pill = document.getElementById('resultPill');
+    pill.textContent = currentWalk.status === 'pass' ? 'Pass' : 'Variance';
+    pill.className = 'status-pill ' + currentWalk.status;
+    document.getElementById('resultCount').textContent =
+      currentWalk.status === 'pass' ? `${currentWalk.items.length}/${currentWalk.items.length}` : `${varianceItems.length} off`;
+
+    const varList = document.getElementById('varianceList');
+    if (varianceItems.length === 0) {
+      varList.innerHTML = '<p class="hint">Every item matched the system count.</p>';
+    } else {
+      varList.innerHTML = varianceItems.map(it => `
+        <div class="var-item">
+          <span class="nm">${escapeHtml(it.itemName)}</span>
+          <span>sys ${it.supposed}</span>
+          <span>phys ${it.actual}</span>
+          <span style="color: var(--red); font-weight:600;">${it.variance > 0 ? '+' : ''}${it.variance}</span>
+        </div>`).join('');
+    }
+
+    document.getElementById('countBlock').style.display = 'none';
+    document.getElementById('resultBlock').style.display = 'block';
+  });
+
+  document.getElementById('discardWalkBtn').addEventListener('click', resetWalkFlow);
+
+  document.getElementById('saveWalkBtn').addEventListener('click', () => {
+    log.unshift({
+      date: currentWalk.date,
+      store: currentWalk.store,
+      employee: currentWalk.employee,
+      status: currentWalk.status,
+      items: currentWalk.items
+    });
+    safeSet(LS_LOG, log);
+    toast('Saved to log');
+    resetWalkFlow();
+  });
+
+  function resetWalkFlow() {
+    currentWalk = null;
+    document.getElementById('setupBlock').style.display = 'block';
+    document.getElementById('countBlock').style.display = 'none';
+    document.getElementById('resultBlock').style.display = 'none';
+    document.getElementById('walkEmployee').value = '';
+    document.getElementById('walkN').value = 10;
+  }
+
+  // ---------- Log view ----------
+  function renderLog() {
+    const el = document.getElementById('logList');
+    if (log.length === 0) {
+      el.innerHTML = '<div class="empty">No pick walks saved yet.</div>';
+      return;
+    }
+    el.innerHTML = '';
+    log.forEach((entry, idx) => {
+      const varItems = entry.items.filter(it => it.variance !== 0);
+      const wrap = document.createElement('div');
+      wrap.className = 'log-entry';
+      wrap.innerHTML = `
+        <div class="log-head" data-toggle="${idx}">
+          <div class="meta">
+            <span class="date">${escapeHtml(entry.date)}</span>
+            &nbsp;&middot;&nbsp;<span class="store">${escapeHtml(entry.store)}</span>
+            &nbsp;&middot;&nbsp;<span class="store">${escapeHtml(entry.employee)}</span>
+          </div>
+          <span class="status-pill ${entry.status}">${entry.status === 'pass' ? 'Pass' : 'Variance'}</span>
+        </div>
+        <div class="log-detail" id="detail-${idx}">
+          ${varItems.length === 0
+            ? '<p class="hint" style="margin:6px 0 0;">All items matched.</p>'
+            : varItems.map(it => `
+              <div class="var-item">
+                <span class="nm">${escapeHtml(it.itemName)}</span>
+                <span>sys ${it.supposed}</span>
+                <span>phys ${it.actual}</span>
+                <span style="color: var(--red); font-weight:600;">${it.variance > 0 ? '+' : ''}${it.variance}</span>
+              </div>`).join('')
+          }
+        </div>`;
+      el.appendChild(wrap);
+    });
+    el.querySelectorAll('.log-head').forEach(head => {
+      head.addEventListener('click', () => {
+        document.getElementById('detail-' + head.dataset.toggle).classList.toggle('open');
+      });
+    });
+  }
+
+  // ---------- CSV export ----------
+  function csvEscape(v) {
+    const s = String(v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function buildMasterCSV() {
+    const rows = [['Date', 'Store', 'Employee Initials', 'Status']];
+    log.slice().reverse().forEach(entry => {
+      rows.push([entry.date, entry.store, entry.employee, entry.status === 'pass' ? 'Pass' : 'Variance']);
+      if (entry.status === 'variance') {
+        entry.items.filter(it => it.variance !== 0).forEach(it => {
+          rows.push([it.itemName, it.supposed, it.actual, it.variance]);
+        });
+      }
+    });
+    return rows.map(r => r.map(csvEscape).join(',')).join('\r\n');
+  }
+
+  document.getElementById('downloadBtn').addEventListener('click', async () => {
+    if (log.length === 0) { toast('Nothing to download yet'); return; }
+    const csv = buildMasterCSV();
+    try {
+      const downloads = await claude.use('downloads');
+      if (downloads) {
+        await downloads.save({ filename: 'pickwalk_master_log.csv', data: csv });
+        return;
+      }
+    } catch (e) {}
+    toast('Download isn\'t available in this view');
+  });
+
+  // ---------- init ----------
+  renderStores();
+  refreshStoreSelect();
+})();
+</script>
+</body>
+</html>
