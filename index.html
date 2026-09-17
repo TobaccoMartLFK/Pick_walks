@@ -190,7 +190,8 @@
       </div>
       <label class="file-label" for="newStoreFile">Choose CSV file&hellip;</label>
       <input type="file" id="newStoreFile" accept=".csv,text/csv" style="display:none">
-      <div id="newStoreFileName" style="font-size:12px;color:var(--ink-soft);margin-top:6px;"></div>
+      <div id="newStoreFileName" style="font-size:12px;color:var(--ink-soft);margin:6px 0 12px;"></div>
+      <button class="btn amber" id="addStoreBtn">Add store</button>
     </div>
   </section>
 
@@ -391,13 +392,14 @@
     document.getElementById('newStoreFileName').textContent = f ? f.name : '';
   });
 
-  document.getElementById('newStoreFile').addEventListener('change', () => {
+  document.getElementById('addStoreBtn').addEventListener('click', () => {
     const nameInput = document.getElementById('newStoreName');
     const fileInput = document.getElementById('newStoreFile');
     const f = fileInput.files[0];
     const name = nameInput.value.trim();
-    if (!f) return;
-    if (!name) { toast('Name the store first'); fileInput.value = ''; return; }
+    if (!name) { toast('Name the store first'); return; }
+    if (!f) { toast('Choose a CSV file first'); return; }
+    if (stores[name]) { toast('A store with that name already exists — use Replace instead'); return; }
     handleFile(f, name);
     nameInput.value = '';
     fileInput.value = '';
